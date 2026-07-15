@@ -1,4 +1,3 @@
-
 #This pipeline is triggered by commits to the main branch.
 trigger:
 - main
@@ -9,7 +8,7 @@ pool:
 
 # Define variables that can be used throughout the pipeline.
 variables:
-  azureSubscription: '73b08de7-6d6a-439e-bd57-69dbe346142f' # The name of your service connection
+  azureSubscription: 'northwind-sales-predictor' # The name of your service connection
   resourceGroup: '<rg-genai-innovate-001>' # Replace with your resource group name
   workspaceName: '<menai-innovate-00lw-g>' # Replace with your workspace name
 
@@ -35,4 +34,21 @@ jobs:
       inlineScript: |
         echo "Running training script..."
         python src/train.py --rg $(resourceGroup) --ws $(workspaceName)
-    displayName: 'Train Model in Azure ML
+    displayName: 'Train Model in Azure ML'
+    
+- job: Deploy
+  displayName: 'Deploy Model to Endpoint'
+  # This job depends on the Train job finishing successfully.
+  dependsOn: Train
+  condition: succeeded()
+  steps:
+  # This task connects to Azure ML and runs the deployment script.
+  - task: AzureCLI@2
+    inputs:
+      azureSubscription: $(azureSubscription)
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Running deployment script..."
+        python src/deploy.py --rg $(resourceGroup) --ws $(workspaceName)
+    displayName: 'Deploy Model to Azure ML Online Endpoint'
