@@ -1,0 +1,38 @@
+
+#This pipeline is triggered by commits to the main branch.
+trigger:
+- main
+
+# The pipeline will run on a virtual machine hosted by Microsoft.
+pool:
+  vmImage: ubuntu-latest
+
+# Define variables that can be used throughout the pipeline.
+variables:
+  azureSubscription: '73b08de7-6d6a-439e-bd57-69dbe346142f' # The name of your service connection
+  resourceGroup: '<rg-genai-innovate-001>' # Replace with your resource group name
+  workspaceName: '<menai-innovate-00lw-g>' # Replace with your workspace name
+
+jobs:
+- job: Train
+  displayName: 'Train and Register Model'
+  steps:
+  # Step 1: Check out the source code from your repository.
+  - checkout: self
+
+  # Step 2: Install required Python packages.
+  - script: |
+      pip install -r requirements.txt
+    displayName: 'Install Python Dependencies'
+
+  # Step 3: Connect to Azure ML and run the training script.
+  # The AzureCLI@2 task is used to run Azure CLI commands.
+  - task: AzureCLI@2
+    inputs:
+      azureSubscription: $(azureSubscription)
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Running training script..."
+        python src/train.py --rg $(resourceGroup) --ws $(workspaceName)
+    displayName: 'Train Model in Azure ML
